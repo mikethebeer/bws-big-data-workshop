@@ -1,0 +1,429 @@
+[
+    {
+        "id": "fe80048ca71faaa1",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "95d2b3d96a7b75e7",
+        "type": "inject",
+        "z": "fe80048ca71faaa1",
+        "name": "create table",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 130,
+        "y": 180,
+        "wires": [
+            [
+                "8b4b2e99bf81f250"
+            ]
+        ]
+    },
+    {
+        "id": "840c89992ac5a385",
+        "type": "function",
+        "z": "fe80048ca71faaa1",
+        "name": "Ready for next lines",
+        "func": "return [\n    msg.complete ? msg : null,\n    { tick: true },\n];\n",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1200,
+        "y": 400,
+        "wires": [
+            [
+                "2a90e0e21afc71f9",
+                "5ca295bd13711966"
+            ],
+            [
+                "91ebffcbb5a47296"
+            ]
+        ]
+    },
+    {
+        "id": "ea19e531a2fcfc73",
+        "type": "csv",
+        "z": "fe80048ca71faaa1",
+        "name": "",
+        "sep": ";",
+        "hdrin": true,
+        "hdrout": "none",
+        "multi": "mult",
+        "ret": "\\r\\n",
+        "temp": "",
+        "skip": "0",
+        "strings": true,
+        "include_empty_strings": false,
+        "include_null_values": false,
+        "x": 510,
+        "y": 480,
+        "wires": [
+            [
+                "265d52587d766793"
+            ]
+        ]
+    },
+    {
+        "id": "265d52587d766793",
+        "type": "function",
+        "z": "fe80048ca71faaa1",
+        "name": "Format SQL",
+        "func": "if (msg.payload && msg.payload.length > 0) {\n    let payload = `\n        INSERT INTO energy_consumption \n        (\n            ts,\n            growing_degree_days,\n            sunshine_duration,\n            shortwave_radiation,\n            direct_shortwave_radiation,\n            diffuse_shortwave_radiation,\n            precipitation_total,\n            snowfall_amount,\n            relative_humidity,\n            cloud_cover_total,\n            cloud_cover_high,\n            cloud_cover_medium,\n            cloud_cover_low,\n            cape,\n            mean_sea_level_pressure,\n            geopotential_height,\n            evapotranspiration,\n            fao_reference_evapotranspiration,\n            temperature,\n            soil_temperature,\n            soil_moisture,\n            vapor_pressure_deficit,\n            wind_speed,\n            wind_direction,\n            verbrauch\n        ) VALUES `;\n    \n    for (const line of msg.payload) {\n        payload += `(\n            '${line['Timestamp']}',\n            ${line['Growing Degree Days']},\n            ${line['Sunshine Duration']},\n            ${line['Shortwave Radiation']},\n            ${line['Direct Shortwave Radiation']},\n            ${line['Diffuse Shortwave Radiation']},\n            ${line['Precipitation Total']},\n            ${line['Snowfall Amount']},\n            ${line['Relative Humidity']},\n            ${line['Cloud Cover Total']},\n            ${line['Cloud Cover High']},\n            ${line['Cloud Cover Medium']},\n            ${line['Cloud Cover Low']},\n            ${line['CAPE']},\n            ${line['Mean Sea Level Pressure']},\n            ${line['Geopotential Height']},\n            ${line['Evapotranspiration']},\n            ${line['FAO Reference Evapotranspiration']},\n            ${line['Temperature']},\n            ${line['Soil Temperature']},\n            ${line['Soil Moisture']},\n            ${line['Vapor Pressure Deficit']},\n            ${line['Wind Speed']},\n            ${line['Wind Direction']},\n            ${line['Verbrauch']}\n        ),`;\n    }\n    \n    msg.payload = payload.slice(0, - 1);\n    msg.payload += ' ON CONFLICT (ts) DO NOTHING';\n}\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 710,
+        "y": 480,
+        "wires": [
+            [
+                "cf78b296d6f4de8c",
+                "7079130b76848c9b"
+            ]
+        ]
+    },
+    {
+        "id": "2a90e0e21afc71f9",
+        "type": "debug",
+        "z": "fe80048ca71faaa1",
+        "name": "Done",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": true,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "_parts.lines",
+        "statusType": "msg",
+        "x": 1470,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "cb9b0767a821f6b5",
+        "type": "ui_upload",
+        "z": "fe80048ca71faaa1",
+        "group": "c51757b55d8e41b7",
+        "title": "Energy Verbrauch CSV hochladen",
+        "accept": "",
+        "name": "uploadSql",
+        "order": 3,
+        "width": 6,
+        "height": 6,
+        "chunk": "256",
+        "transfer": "binary",
+        "x": 100,
+        "y": 480,
+        "wires": [
+            [
+                "91ebffcbb5a47296"
+            ]
+        ]
+    },
+    {
+        "id": "91ebffcbb5a47296",
+        "type": "chunks-to-lines",
+        "z": "fe80048ca71faaa1",
+        "name": "",
+        "nbLines": "1000",
+        "linesFormat": "csv",
+        "decoder": "UTF-8",
+        "x": 300,
+        "y": 480,
+        "wires": [
+            [
+                "ea19e531a2fcfc73",
+                "071947d1c45bcc72"
+            ]
+        ]
+    },
+    {
+        "id": "5ca295bd13711966",
+        "type": "ui_text",
+        "z": "fe80048ca71faaa1",
+        "group": "c51757b55d8e41b7",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Geladene Zeilen:",
+        "format": "{{msg._parts.lines}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": "",
+        "color": "#000000",
+        "x": 1510,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "b9dcd26473c3f0e5",
+        "type": "inject",
+        "z": "fe80048ca71faaa1",
+        "name": "drop table",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 120,
+        "y": 100,
+        "wires": [
+            [
+                "59c9698bac544f70"
+            ]
+        ]
+    },
+    {
+        "id": "59c9698bac544f70",
+        "type": "template",
+        "z": "fe80048ca71faaa1",
+        "name": "",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "plain",
+        "template": "DROP TABLE IF EXISTS energy_consumption;",
+        "output": "str",
+        "x": 320,
+        "y": 100,
+        "wires": [
+            [
+                "d9f12e23b1baea6b"
+            ]
+        ]
+    },
+    {
+        "id": "8b4b2e99bf81f250",
+        "type": "template",
+        "z": "fe80048ca71faaa1",
+        "name": "",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "plain",
+        "template": "CREATE TABLE IF NOT EXISTS energy_consumption (\n    ts timestamptz primary key,\n    growing_degree_days real,\n    sunshine_duration real,\n    shortwave_radiation real,\n    direct_shortwave_radiation real,\n    diffuse_shortwave_radiation real,\n    precipitation_total real,\n    snowfall_amount real,\n    relative_humidity real,\n    cloud_cover_total real,\n    cloud_cover_high real,\n    cloud_cover_medium real,\n    cloud_cover_low real,\n    cape real,\n    mean_sea_level_pressure real,\n    geopotential_height real,\n    evapotranspiration real,\n    fao_reference_evapotranspiration real,\n    temperature real,\n    soil_temperature real,\n    soil_moisture real,\n    vapor_pressure_deficit real,\n    wind_speed real,\n    wind_direction real,\n    verbrauch real\n);",
+        "output": "str",
+        "x": 320,
+        "y": 180,
+        "wires": [
+            [
+                "b6b46082e30513ae"
+            ]
+        ]
+    },
+    {
+        "id": "3bbe0a871db1a8e0",
+        "type": "postgresql",
+        "z": "fe80048ca71faaa1",
+        "name": "",
+        "query": "{{{ msg.payload }}}",
+        "postgreSQLConfig": "3d08b839e5a9c96c",
+        "split": false,
+        "rowsPerMsg": 1,
+        "outputs": 1,
+        "x": 930,
+        "y": 140,
+        "wires": [
+            [
+                "6d73c700a1fc09de",
+                "50b1f1d3e2bd6a31"
+            ]
+        ]
+    },
+    {
+        "id": "6d73c700a1fc09de",
+        "type": "debug",
+        "z": "fe80048ca71faaa1",
+        "name": "debug 4",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1120,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "77c15032b8a67eea",
+        "type": "link in",
+        "z": "fe80048ca71faaa1",
+        "name": "postgres",
+        "links": [],
+        "x": 795,
+        "y": 140,
+        "wires": [
+            [
+                "3bbe0a871db1a8e0"
+            ]
+        ]
+    },
+    {
+        "id": "cf78b296d6f4de8c",
+        "type": "link call",
+        "z": "fe80048ca71faaa1",
+        "name": "",
+        "links": [
+            "77c15032b8a67eea"
+        ],
+        "linkType": "static",
+        "timeout": "30",
+        "x": 960,
+        "y": 480,
+        "wires": [
+            [
+                "840c89992ac5a385"
+            ]
+        ]
+    },
+    {
+        "id": "50b1f1d3e2bd6a31",
+        "type": "link out",
+        "z": "fe80048ca71faaa1",
+        "name": "link out 3",
+        "mode": "return",
+        "links": [],
+        "x": 1075,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "d9f12e23b1baea6b",
+        "type": "link call",
+        "z": "fe80048ca71faaa1",
+        "name": "",
+        "links": [
+            "77c15032b8a67eea"
+        ],
+        "linkType": "static",
+        "timeout": "30",
+        "x": 500,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b6b46082e30513ae",
+        "type": "link call",
+        "z": "fe80048ca71faaa1",
+        "name": "",
+        "links": [
+            "77c15032b8a67eea"
+        ],
+        "linkType": "static",
+        "timeout": "30",
+        "x": 500,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "43a659cc70e8e6e4",
+        "type": "comment",
+        "z": "fe80048ca71faaa1",
+        "name": "Dashboard UI",
+        "info": "",
+        "x": 110,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "7079130b76848c9b",
+        "type": "debug",
+        "z": "fe80048ca71faaa1",
+        "name": "debug 1",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 960,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "071947d1c45bcc72",
+        "type": "debug",
+        "z": "fe80048ca71faaa1",
+        "name": "debug 2",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 450,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "c51757b55d8e41b7",
+        "type": "ui_group",
+        "name": "Energieverbrauch",
+        "tab": "5f17e3a3.4c85ac",
+        "order": 1,
+        "disp": true,
+        "width": 6,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "3d08b839e5a9c96c",
+        "type": "postgreSQLConfig",
+        "name": "",
+        "host": "pg",
+        "hostFieldType": "str",
+        "port": 5432,
+        "portFieldType": "num",
+        "database": "app",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": 10,
+        "maxFieldType": "num",
+        "idle": 1000,
+        "idleFieldType": "num",
+        "connectionTimeout": 10000,
+        "connectionTimeoutFieldType": "num",
+        "user": "app",
+        "userFieldType": "str",
+        "password": "app",
+        "passwordFieldType": "str"
+    },
+    {
+        "id": "5f17e3a3.4c85ac",
+        "type": "ui_tab",
+        "name": "Energieverbrauch",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    }
+]
